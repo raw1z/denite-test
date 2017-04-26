@@ -4,6 +4,12 @@ from os.path import exists, join
 from denite.process import Process
 from denite.util import parse_command, abspath
 from re import match
+COLORS = [
+    '#6c6c6c', '#ff6666', '#66ff66', '#ffd30a',
+    '#1e95fd', '#ff13ff', '#1bc8c8', '#c0c0c0',
+    '#383838', '#ff4444', '#44ff44', '#ffb30a',
+    '#6699ff', '#f820ff', '#4ae2e2', '#ffffff',
+]
 
 class Source(Base):
     def __init__(self, vim):
@@ -21,6 +27,50 @@ class Source(Base):
         if context['__proc']:
             context['__proc'].kill()
             context['__proc'] = None
+
+    def highlight(self):
+        highlight_table = {
+            '0': ' cterm=NONE ctermfg=NONE ctermbg=NONE gui=NONE guifg=NONE guibg=NONE',
+            '1': ' cterm=BOLD gui=BOLD',
+            '3': ' cterm=ITALIC gui=ITALIC',
+            '4': ' cterm=UNDERLINE gui=UNDERLINE',
+            '7': ' cterm=REVERSE gui=REVERSE',
+            '8': ' ctermfg=0 ctermbg=0 guifg=#000000 guibg=#000000',
+            '9': ' gui=UNDERCURL',
+            '21': ' cterm=UNDERLINE gui=UNDERLINE',
+            '22': ' gui=NONE',
+            '23': ' gui=NONE',
+            '24': ' gui=NONE',
+            '25': ' gui=NONE',
+            '27': ' gui=NONE',
+            '28': ' ctermfg=NONE ctermbg=NONE guifg=NONE guibg=NONE',
+            '29': ' gui=NONE',
+            '39': ' ctermfg=NONE guifg=NONE',
+            '49': ' ctermbg=NONE guibg=NONE',
+        }
+
+        for color in range(30, 37):
+            highlight_table[f"{color}"] = f" ctermfg={color-30} guifg={COLORS[color-30]}"
+
+            for color2 in [1, 3, 4, 7]:
+                highlight_table[f"{color2};{color}"] = highlight_table[f"{color2}"] + highlight_table[f"{color}"]
+
+        for color in range(40, 47):
+            highlight_table[f"{color}"] = f" ctermbg={color-40} guibg={COLORS[color-40]}"
+
+            for color2 in range(30, 37):
+                highlight_table[f"{color2};{color}"] = highlight_table[f"{color2}"] + highlight_table[f"{color}"]
+
+        self.vim.command("syntax match DeniteSource_test_run_conceal contained conceal \"\\e\\[[0-9;]*m\" containedin=DeniteSource_test_run")
+        self.vim.command("syntax match DeniteSource_test_run_conceal contained conceal \"\\e\\[?1h\" containedin=DeniteSource_test_run")
+        self.vim.command("syntax match DeniteSource_test_run_ignore contained conceal \"\\e\\[?\\d[hl]\\|\\e=\\r\\|\\r\\|\\e>\" containedin=DeniteSource_test_run")
+
+        for key, highlight in highlight_table.items():
+            syntax_name = f"DeniteSource_test_run_color{key.replace(';', '_')}"
+            syntax_command = f"start=+\\e\\[0\\?{key}m+ end=+\\ze\\e[\\[0*m]\\|$+ contains=DeniteSource_test_run_conceal containedin=DeniteSource_test_run oneline"
+
+            self.vim.command(f"syntax region {syntax_name} {syntax_command}")
+            self.vim.command(f"highlight {syntax_name} {highlight}")
 
     def gather_candidates(self, context):
         if context['__proc']:
