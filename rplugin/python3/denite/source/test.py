@@ -8,7 +8,6 @@ class Source(Base):
         super().__init__(vim)
 
         self.name = 'test'
-        self.kind = 'command'
         self.kind = 'test'
         self.current_directory = os.getcwd()
 
@@ -38,6 +37,6 @@ class Source(Base):
             'word': path,
             'abbr': path.replace(self.current_directory, '').strip('/'),
             'action__path': path,
-            'action__command': f"Denite test_run:{path}"
+            'action__command': f"Denite -mode=normal test_run:{path}"
         }
 
