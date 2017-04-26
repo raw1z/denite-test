@@ -1,8 +1,9 @@
 from .base import Base
 from os import getcwd
-from os.path import exists
+from os.path import exists, join
 from denite.process import Process
 from denite.util import parse_command, abspath
+from re import match
 
 class Source(Base):
     def __init__(self, vim):
@@ -49,7 +50,18 @@ class Source(Base):
         return candidates
 
     def __build_command(self, context):
-        return ["cat", context["__test_path"]]
+        path = context['path']
+        test_path = context['__test_path']
+
+        if exists(join(path, "spec", "spec_helper.rb")):
+            runner = './bin/rspec' if exists('./bin/rspec') else 'rspec'
+            return [runner, '--no-profile', '--color', '--format', 'documentation', test_path]
+
+        elif exists(join(path, "mix.exs")):
+            return ["mix", "test", test_path]
+
+        else:
+            return ["cat", test_path]
 
     def __build_candidate(self, line):
         return {
