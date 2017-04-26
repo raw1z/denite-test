@@ -3,7 +3,8 @@ from os import getcwd
 from os.path import exists, join
 from denite.process import Process
 from denite.util import parse_command, abspath
-from re import match
+from re import compile
+
 COLORS = [
     '#6c6c6c', '#ff6666', '#66ff66', '#ffd30a',
     '#1e95fd', '#ff13ff', '#1bc8c8', '#c0c0c0',
@@ -17,6 +18,7 @@ class Source(Base):
 
         self.name = 'test_run'
         self.kind = 'command'
+        self.candidate_rx = compile('#?\s*(?P<file_path>.+):(?P<line_number>\d+):?.*$')
 
     def on_init(self, context):
         context['__proc'] = None
@@ -114,8 +116,18 @@ class Source(Base):
             return ["cat", test_path]
 
     def __build_candidate(self, line):
-        return {
-            'word': line,
-            'action__command': "echo 'hum'"
-        }
+        sanitized_line = line.strip()
+        match = self.candidate_rx.match(sanitized_line)
+        if match:
+            return {
+                'word': line,
+                'kind': 'file',
+                'action__path': match.group('file_path'),
+                'action__line': match.group('line_number')
+            }
+        else:
+            return {
+                'word': line,
+                'kind': 'common'
+            }
 
