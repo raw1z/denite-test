@@ -18,6 +18,7 @@ class Source(Base):
 
         self.name = 'test_run'
         self.kind = 'command'
+        self.current_directory = getcwd()
         self.candidate_rx = compile('#?\s*(?P<file_path>.+):(?P<line_number>\d+):?.*$')
 
     def on_init(self, context):
@@ -119,15 +120,17 @@ class Source(Base):
         sanitized_line = line.strip()
         match = self.candidate_rx.match(sanitized_line)
         if match:
-            return {
-                'word': line,
-                'kind': 'file',
-                'action__path': match.group('file_path'),
-                'action__line': match.group('line_number')
-            }
-        else:
-            return {
-                'word': line,
-                'kind': 'common'
-            }
+            file_path = match.group('file_path')
+            if exists(join(self.current_directory, file_path)):
+                return {
+                    'word': line,
+                    'kind': 'file',
+                    'action__path': file_path,
+                    'action__line': match.group('line_number')
+                }
+
+        return {
+            'word': line,
+            'kind': 'common'
+        }
 
