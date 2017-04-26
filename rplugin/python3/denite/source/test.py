@@ -9,6 +9,7 @@ class Source(Base):
 
         self.name = 'test'
         self.kind = 'command'
+        self.kind = 'test'
         self.current_directory = os.getcwd()
 
     def gather_candidates(self, context):
