@@ -3,7 +3,7 @@ let s:String = s:Vital.import('Data.String')
 
 function! denite_test#run_test() abort "{{{
   let filepath = expand("%")
-  let test_file_regex = '\v.*_(spec|test)\.(rb|ex)$'
+  let test_file_regex = '\v.*_(spec|test)\.(rb|exs)$'
 
   if match(filepath, test_file_regex) == -1
     if denite_test#run_last_test() == 0
