@@ -23,8 +23,16 @@ class Source(Base):
 
     def on_init(self, context):
         context['__proc'] = None
-        context['__test_path'] = context['args'][0] if len(
-            context['args']) > 0 else context['path']
+        context['__test_path'] = ""
+
+        if len(context['args']) > 0:
+            context['__test_path'] += context['args'][0]
+
+        if len(context['args']) > 1:
+            try:
+                context['__test_line'] = int(context['args'][1])
+            except:
+                pass
 
     def on_close(self, context):
         if context['__proc']:
@@ -105,6 +113,8 @@ class Source(Base):
     def __build_command(self, context):
         path = context['path']
         test_path = context['__test_path']
+        if '__test_line' in context:
+            test_path += f":{context['__test_line']}"
 
         if exists(join(path, "spec", "spec_helper.rb")):
             runner = './bin/rspec' if exists('./bin/rspec') else 'rspec'
@@ -133,4 +143,10 @@ class Source(Base):
             'word': line,
             'kind': 'common'
         }
+
+    def __read_line(self, str):
+        try:
+            return int(str)
+        except ValueError:
+            return ""
 
