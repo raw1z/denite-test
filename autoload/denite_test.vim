@@ -17,6 +17,9 @@ function! denite_test#run_test() abort "{{{
 endfunction "}}}
 
 function! denite_test#run_last_test() abort "{{{
+  " update file before running tests
+  exec ':wall'
+
   if exists('g:denite_test_last_command')
     exec g:denite_test_last_command
     return 1
@@ -34,7 +37,7 @@ endfunction "}}}
 
 function! denite_test#build_vim_command(test_command) abort "{{{
   " update file before running tests
-  exec ':wall!'
+  exec ':wall'
 
   let shellcmd = s:String.replace(a:test_command, ' ', '\\ ')
   let deniteOptions = '-buffer-name=test -mode=normal'
