@@ -28,7 +28,7 @@ function! denite_test#run_last_test() abort "{{{
 endfunction "}}}
 
 function! denite_test#build_test(test, line) abort "{{{
-  if a:line > 0
+  if a:line > 1
     return a:test.':'.a:line
   else
     return a:test
