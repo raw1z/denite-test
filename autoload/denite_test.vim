@@ -1,6 +1,7 @@
 let s:Vital = vital#of('vital')
 let s:String = s:Vital.import('Data.String')
 let s:Buffer = s:Vital.import('Vim.Buffer')
+let s:FilePath = s:Vital.import('System.Filepath')
 
 fun! denite_test#open_file_at_line(line) abort "{{{
   let rx = '\v#?\s*(.+):(\d+):?.*$'
@@ -12,12 +13,16 @@ fun! denite_test#open_file_at_line(line) abort "{{{
   endif
 endf " }}}
 
-fun! denite_test#execute_command() abort "{{{
-  :new
+fun! denite_test#execute_command(test_command) abort "{{{
+  " update files before running tests
+  exec ':wall'
+
+  new
+  normal K
   nmap <buffer> q :q<CR>
   nmap <buffer> <enter> :call denite_test#open_file_at_line(getline('.'))<CR>
-  call termopen(g:denite_test_last_command)
-  call feedkeys("G")
+  call termopen(a:test_command)
+  normal G
 endf "}}}
 
 function! denite_test#run_test() abort "{{{
@@ -30,18 +35,18 @@ function! denite_test#run_test() abort "{{{
     endif
   else
     let test = denite_test#build_test(filepath, line('.'))
-    let g:denite_test_last_command = denite_test#build_vim_command(test)
-    call denite_test#execute_command()
+    let test_command = denite_test#build_vim_command(test)
+    call denite_test#execute_command(test_command)
+    let g:denite_test_last_command = test_command
   endif
 endfunction "}}}
 
 function! denite_test#run_last_test() abort "{{{
-  " update file before running tests
-  exec ':wall'
-
   if exists('g:denite_test_last_command')
-    call denite_test#execute_command()
+    call denite_test#execute_command(g:denite_test_last_command)
+    return 1
   endif
+
   return 0
 endfunction "}}}
 
@@ -53,21 +58,30 @@ function! denite_test#build_test(test, line) abort "{{{
   endif
 endfunction "}}}
 
-function! denite_test#build_vim_command(test_command) abort "{{{
-  " update file before running tests
-  exec ':wall'
+function! denite_test#full_path(path) abort "{{{
+  let cwd = fnamemodify(getcwd(), 'p')
+  return s:FilePath.join(cwd, a:path)
+endfunction "}}}
 
+function! denite_test#filereadable(path) abort "{{{
+  let fullpath = denite_test#full_path(a:path)
+  return filereadable(fullpath)
+endfunction "}}}
+
+function! denite_test#build_vim_command(test_command) abort "{{{
   let shellcmd = s:String.replace(a:test_command, ' ', '\\ ')
 
-  if filereadable('spec/spec_helper.rb')
+  if denite_test#filereadable('spec/spec_helper.rb')
     let runner = 'rspec'
     if executable('./bin/rspec')
       let runner = './bin/rspec'
     endif
 
-     return [runner, '--no-profile', '--color', '--format', 'documentation', shellcmd]
-  elseif filereadable('mix.exs')
+    return [runner, '--no-profile', '--color', '--format', 'documentation', shellcmd]
+  elseif denite_test#filereadable('mix.exs')
     return ["mix", "test", shellcmd]
+  else
+    ['echo', 'NOK']
   endif
 endfunction "}}}
 
