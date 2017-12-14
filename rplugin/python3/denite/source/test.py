@@ -37,6 +37,6 @@ class Source(Base):
             'word': path,
             'abbr': path.replace(self.current_directory, '').strip('/'),
             'action__path': path,
-            'action__command': f"Denite -buffer-name=test -mode=normal test_run:{path}"
+            'action__command': f"call denite_test#run_test_file('{path}', 0)"
         }
 

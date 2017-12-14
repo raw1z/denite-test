@@ -34,11 +34,15 @@ function! denite_test#run_test() abort "{{{
       exec ":TestList"
     endif
   else
-    let test = denite_test#build_test(filepath, line('.'))
-    let test_command = denite_test#build_vim_command(test)
-    call denite_test#execute_command(test_command)
-    let g:denite_test_last_command = test_command
+    call denite_test#run_test_file(filepath, line('.'))
   endif
+endfunction "}}}
+
+function! denite_test#run_test_file(filepath, line) abort "{{{
+  let test = denite_test#build_test(a:filepath, a:line)
+  let test_command = denite_test#build_vim_command(test)
+  call denite_test#execute_command(test_command)
+  let g:denite_test_last_command = test_command
 endfunction "}}}
 
 function! denite_test#run_last_test() abort "{{{
@@ -77,7 +81,7 @@ function! denite_test#build_vim_command(test_command) abort "{{{
       let runner = './bin/rspec'
     endif
 
-    return [runner, '--no-profile', '--color', '--format', 'documentation', shellcmd]
+    return [runner, '--no-profile', '--color', shellcmd]
   elseif denite_test#filereadable('mix.exs')
     return ["mix", "test", shellcmd]
   else
