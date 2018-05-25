@@ -13,14 +13,35 @@ fun! denite_test#open_file_at_line(line) abort "{{{
   endif
 endf " }}}
 
+fun! denite_test#create_test_buffer() abort "{{{
+  new
+  let g:denite_test_current_test_buffer = bufnr('%')
+
+  " send test buffer to top of the tab
+  normal K
+
+  " setup keymaps
+  nmap <buffer> q :q<CR>
+  nmap <buffer> <enter> :call denite_test#open_file_at_line(getline('.'))<CR>
+endf "}}}
+
+fun! denite_test#delete_existing_test_buffer() abort "{{{
+  if exists("g:denite_test_current_test_buffer")
+    if bufexists(g:denite_test_current_test_buffer)
+      execute 'silent ' . g:denite_test_current_test_buffer . 'bdelete!'
+    endif
+  end
+endf "}}}
+
 fun! denite_test#execute_command(test_command) abort "{{{
+  call denite_test#delete_existing_test_buffer()
+
   " update files before running tests
   exec ':wall'
 
-  new
-  normal K
-  nmap <buffer> q :q<CR>
-  nmap <buffer> <enter> :call denite_test#open_file_at_line(getline('.'))<CR>
+  call denite_test#create_test_buffer()
+
+  " run command
   call termopen(a:test_command)
   normal G
 endf "}}}
